@@ -1,0 +1,36 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mohamed Amr — Senior Copywriter</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Cairo:wght@400;600;800&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"></head><body>
+<nav><div class="wrap"><a href="#" style="font:26px Anton,Impact;margin:0" id="logo"></a><div class="links"><a href="#work">Work</a><a href="#about">About</a><a href="#exp">Experience</a><a href="#certs">Certificates</a><button class="btn sm red" data-ct>Get Contact</button></div></div></nav>
+<header class="hero"><div class="wrap hero-in"><div><p id="loc"></p><h1 id="name"></h1><p class="role" id="title"></p><p class="lead" id="tag"></p>
+<div class="cta"><a class="btn gold" id="cv" target="_blank" rel="noopener">View CV</a><button class="btn" data-ct>Get Contact</button></div></div><div class="photo" id="photo"></div></div><div class="wrap stats" id="stats"></div></header>
+<section id="about"><div class="wrap"><h2>About</h2><p id="bio"></p></div></section>
+<section id="work" style="background:#fff"><div class="wrap"><h2>Selected Work</h2><div class="chips" id="chips"></div><div class="grid" id="grid"></div></div></section>
+<section id="exp"><div class="wrap"><h2>Experience</h2><div class="tl" id="tl"></div></div></section>
+<section id="certs" style="background:#fff"><div class="wrap"><h2>Certificates</h2><div class="certs" id="cc"></div></div></section>
+<footer><div class="wrap"><h2>Let's contact</h2><p>Let's create something creative together.</p><br><button class="btn gold" data-ct>Get Contact</button></div></footer>
+<div class="modal" id="m" hidden><div class="box" id="mb"></div></div>
+<script src="content.js"></script><script src="common.js"></script><script>
+const $=id=>document.getElementById(id);let D,cat='All';
+const open=h=>{$('mb').innerHTML='<button class="x" aria-label="Close">✕</button>'+h;$('m').hidden=false;$('mb').querySelector('.x').onclick=close};
+const close=()=>{$('m').hidden=true;$('mb').innerHTML=''};
+$('m').onclick=e=>{if(e.target.id==='m')close()};addEventListener('keydown',e=>e.key==='Escape'&&close());
+function grid(){const draft=localStorage.getItem(KEY);const L=D.projects.map((p,i)=>[p,i]).filter(([p])=>(p.url||draft)&&(cat==='All'||p.category===cat));
+$('grid').innerHTML=L.length?L.map(([p,i])=>`<div class="card" tabindex="0" data-i="${i}"><div class="th">${thumb(p)}</div><div class="cap"><b dir="auto">${esc(p.title)}</b><small>${esc(p.client)}${p.client&&p.category?' · ':''}${esc(p.category)}</small></div></div>`).join(''):'<p class="empty">Projects are coming soon.</p>';
+$('grid').querySelectorAll('.card').forEach(c=>{c.onclick=c.onkeydown=e=>{if(e.type==='keydown'&&e.key!=='Enter')return;const p=D.projects[c.dataset.i];
+open(`<div class="media">${full(p)}</div><h3 dir="auto">${esc(p.title)}</h3><small>${esc(p.client)} · ${esc(p.category)}</small><div class="notes">${(p.note||'').split('\n').filter(x=>x.trim()).map(n=>`<p dir="auto">${esc(n)}</p>`).join('')}</div>`)}})}
+function chips(){const cs=['All',...D.categories];$('chips').innerHTML=cs.map(c=>`<button class="chip ${c===cat?'on':''}">${esc(c)}</button>`).join('');
+$('chips').querySelectorAll('button').forEach((b,i)=>b.onclick=()=>{cat=cs[i];chips();grid()})}
+function contact(){const P=D.profile,wa=(P.whatsapp||P.phone||'').replace(/\D/g,'');
+open(`<div class="ct"><h3>Get in touch</h3><a href="mailto:${esc(P.email)}">Email <span>${esc(P.email)}</span></a><a href="tel:${esc(P.phone)}">Call <span>${esc(P.phone)}</span></a><a target="_blank" rel="noopener" href="https://wa.me/${wa}">WhatsApp <span>Chat</span></a><a target="_blank" rel="noopener" href="${esc(P.linkedin)}">LinkedIn <span>Profile</span></a><button class="c" id="cp">Copy email <span>⧉</span></button></div>`);
+$('cp').onclick=()=>{navigator.clipboard.writeText(P.email);$('cp').firstChild.textContent='Copied '}}
+loadData().then(d=>{D=d;const P=d.profile;document.title=P.name+' — '+P.title;
+$('logo').textContent=P.name.split(' ').map(w=>w[0]).join('').slice(0,2);$('loc').textContent=P.location;$('name').textContent=P.name;$('title').textContent=P.title;$('tag').textContent=P.tagline;$('bio').textContent=P.bio;
+$('cv').href=P.cvUrl||'cv.pdf';
+$('photo').style.backgroundImage=P.photo?`url("${P.photo}")`:'';if(!P.photo)$('photo').textContent=P.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+$('stats').innerHTML=d.stats.map(s=>`<div><b>${esc(s.n)}</b><span>${esc(s.l)}</span></div>`).join('');
+$('tl').innerHTML=d.experience.map(e=>`<div><b>${esc(e.role)}</b><span>${esc(e.company)} · ${esc(e.period)}</span></div>`).join('');
+$('cc').innerHTML=d.certs.map(c=>`<div><b>${esc(c.name)}</b><br><small>${esc(c.by)}</small></div>`).join('');
+chips();grid();document.querySelectorAll('[data-ct]').forEach(b=>b.onclick=contact)});
+</script></body></html>

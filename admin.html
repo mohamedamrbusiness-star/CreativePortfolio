@@ -1,0 +1,39 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Admin</title><link href="https://fonts.googleapis.com/css2?family=Anton&family=Cairo&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css">
+<style>.ad{max-width:900px;margin:0 auto;padding:24px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0;position:sticky;top:0;background:var(--cream);padding:10px 0;z-index:5}
+.row{background:#fff;border:2px solid var(--ink);border-radius:16px;padding:16px;margin-bottom:14px}.rh{display:flex;justify-content:space-between;margin-bottom:8px}.rh button{margin-inline-start:6px;border:1px solid var(--ink);background:none;border-radius:8px;padding:2px 10px;cursor:pointer}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 3px}input,select,textarea{width:100%;padding:10px 12px;border:2px solid #0003;border-radius:10px;font:15px 'Space Grotesk','Cairo'}textarea{min-height:90px}
+.pv{max-width:220px;margin-top:10px;border-radius:10px;overflow:hidden}.pv img,.pv video{width:100%;display:block}#st{color:var(--red);font-weight:600}</style></head><body>
+<div class="ad"><h1 style="font-size:44px;color:var(--red)">ADMIN</h1><p>Changes save in this browser instantly (the site shows them to you as a preview). Use <b>Publish</b> to make them live for everyone. <span id="st"></span></p>
+<div class="tabs" id="tabs"></div><div id="v"></div></div>
+<script src="content.js"></script><script src="common.js"></script><script>
+let D,T='projects';
+const S={projects:[['title','Project title'],['client','Client'],['category','Category','cat'],['type','Type','sel:image,video'],['url','Image or video link (YouTube, Vimeo, Drive, direct .mp4/.jpg)'],['note','Description / comments — one per line','area']],
+experience:[['role','Role'],['company','Company'],['period','Period']],stats:[['n','Number'],['l','Label']],certs:[['name','Certificate'],['by','Issuer']]};
+const P=[['name','Name'],['title','Title'],['tagline','Tagline'],['bio','About (bio)','area'],['email','Email'],['phone','Phone'],['whatsapp','WhatsApp number (digits only)'],['linkedin','LinkedIn URL'],['cvUrl','CV file or link'],['photo','Photo link (optional)'],['location','Location']];
+const $=id=>document.getElementById(id),save=()=>{localStorage.setItem(KEY,JSON.stringify(D));$('st').textContent='Saved locally ✓'};
+const fld=(k,i,f,l,t,v)=>{const h=`oninput="up('${k}',${i},'${f}',this.value)"`;
+return`<label>${l}</label>`+(t==='area'?`<textarea dir="auto" ${h}>${esc(v)}</textarea>`:t==='cat'?`<select ${h}>${D.categories.map(c=>`<option ${c===v?'selected':''}>${esc(c)}</option>`).join('')}</select>`:t&&t.startsWith('sel')?`<select ${h}>${t.slice(4).split(',').map(c=>`<option ${c===v?'selected':''}>${c}</option>`).join('')}</select>`:`<input dir="auto" value="${esc(v)}" ${h}>`)};
+function up(k,i,f,v){if(k==='profile')D.profile[f]=v;else{D[k][i][f]=v;const e=$('pv'+i);if(k==='projects'&&e&&(f==='url'||f==='type'))e.innerHTML=thumb(D.projects[i])}save()}
+const mv=(k,i,d)=>{const a=D[k],j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];save();draw()};
+const rm=(k,i)=>{if(confirm('Delete this item?')){D[k].splice(i,1);save();draw()}};
+const add=k=>{D[k].push(Object.fromEntries(S[k].map(([f])=>[f,f==='type'?'image':f==='category'?D.categories[0]:''])));save();draw()};
+function draw(){$('tabs').innerHTML=['projects','profile','experience','stats','certs','publish'].map(t=>`<button class="chip ${t===T?'on':''}" onclick="T='${t}';draw()">${t[0].toUpperCase()+t.slice(1)}</button>`).join('');
+const v=$('v');
+if(T==='profile')v.innerHTML=P.map(([f,l,t])=>fld('profile',0,f,l,t,D.profile[f])).join('')+`<label>Project categories (comma separated)</label><input value="${esc(D.categories.join(', '))}" oninput="D.categories=this.value.split(',').map(s=>s.trim()).filter(Boolean);save()">`;
+else if(T==='publish')pub();
+else v.innerHTML=D[T].map((r,i)=>`<div class="row"><div class="rh"><b>#${i+1}</b><span><button onclick="mv('${T}',${i},-1)">↑</button><button onclick="mv('${T}',${i},1)">↓</button><button onclick="rm('${T}',${i})">✕</button></span></div>${S[T].map(([f,l,t])=>fld(T,i,f,l,t,r[f])).join('')}${T==='projects'?`<div class="pv" id="pv${i}">${thumb(r)}</div>`:''}</div>`).join('')+`<button class="btn red" onclick="add('${T}')">+ Add</button>`}
+function pub(){const g=JSON.parse(localStorage.getItem('pf_gh')||'{}');
+$('v').innerHTML=`<div class="row"><p>1) Create a fine-grained GitHub token (Settings → Developer settings) with <b>Contents: Read and write</b> on your portfolio repo. It stays in this browser only.</p>
+${['owner','repo','branch','token'].map(f=>`<label>${f}</label><input id="g_${f}" type="${f==='token'?'password':'text'}" value="${esc(g[f]||(f==='branch'?'main':''))}">`).join('')}
+<br><button class="btn red" onclick="publish()">Publish to GitHub</button> <span id="pm"></span></div>
+<div class="row"><button class="btn" onclick="exp()">Export content.js</button> <label style="display:inline-block" class="btn">Import .json<input type="file" accept=".json" hidden onchange="imp(this)"></label> <button class="btn" onclick="if(confirm('Discard local changes and reload the published version?')){localStorage.removeItem(KEY);location.reload()}">Discard draft</button></div>`}
+async function publish(){const g=Object.fromEntries(['owner','repo','branch','token'].map(f=>[f,$('g_'+f).value.trim()]));localStorage.setItem('pf_gh',JSON.stringify(g));
+const u=`https://api.github.com/repos/${g.owner}/${g.repo}/contents/content.js`,H={Authorization:'Bearer '+g.token,Accept:'application/vnd.github+json'};$('pm').textContent='Publishing…';
+try{const r=await fetch(u+'?ref='+g.branch,{headers:H});const sha=r.ok?(await r.json()).sha:undefined;
+const w=await fetch(u,{method:'PUT',headers:H,body:JSON.stringify({message:'Update portfolio content',branch:g.branch,sha,content:btoa(unescape(encodeURIComponent('window.PF_DATA='+JSON.stringify(D,null,1)+';\n')))})});
+$('pm').textContent=w.ok?'Published ✓ — live in about a minute.':'Failed: check owner, repo and token permissions ('+w.status+').'}catch(e){$('pm').textContent='Network error.'}}
+function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['window.PF_DATA='+JSON.stringify(D,null,1)+';\n'],{type:'text/javascript'}));a.download='content.js';a.click()}
+function imp(i){const f=i.files[0];if(!f)return;f.text().then(t=>{D=JSON.parse(t);save();draw()})}
+loadData().then(d=>{D=d;draw()});
+</script></body></html>
