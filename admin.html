@@ -4,7 +4,11 @@
 .row{background:#fff;border:2px solid var(--ink);border-radius:16px;padding:16px;margin-bottom:14px}.rh{display:flex;justify-content:space-between;margin-bottom:8px}.rh button{margin-inline-start:6px;border:1px solid var(--ink);background:none;border-radius:8px;padding:2px 10px;cursor:pointer}
 label{display:block;font-size:13px;color:var(--mut);margin:10px 0 3px}input,select,textarea{width:100%;padding:10px 12px;border:2px solid #0003;border-radius:10px;font:15px 'Space Grotesk','Cairo'}textarea{min-height:90px}
 .pv{max-width:220px;margin-top:10px;border-radius:10px;overflow:hidden}.pv img,.pv video{width:100%;display:block}#st{color:var(--red);font-weight:600}</style></head><body>
-<div class="ad"><h1 style="font-size:44px;color:var(--red)">ADMIN</h1><p>Changes save in this browser instantly (the site shows them to you as a preview). Use <b>Publish</b> to make them live for everyone. <span id="st"></span></p>
+<div class="ad" id="lg" hidden><h1 style="font-size:44px;color:var(--red)">ADMIN</h1><div class="row"><h3 style="font-size:26px;margin-bottom:6px">Sign in with GitHub</h3><p style="color:var(--mut)">Only the repo owner can open the admin. Your token is checked against GitHub and never leaves this browser except to call GitHub.</p>
+<label>GitHub username</label><input id="l_owner" autocomplete="username"><label>Repository name</label><input id="l_repo"><label>Branch</label><input id="l_branch" value="main"><label>Personal access token</label><input id="l_token" type="password" autocomplete="current-password" placeholder="github_pat_…">
+<label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="l_rem" style="width:auto"> Remember me on this device</label><br><button class="btn red" id="lb" onclick="login()">Sign in</button> <span id="lm" style="color:var(--red);font-weight:600"></span>
+<p style="color:var(--mut);font-size:14px;margin-top:14px">Create the token at GitHub → Settings → Developer settings → Fine-grained tokens. Select only this repo, with <b>Contents: Read and write</b>.</p></div></div>
+<div class="ad" id="app" hidden><h1 style="font-size:44px;color:var(--red)">ADMIN</h1><p>Changes save in this browser instantly (the site shows them to you as a preview). Use <b>Publish</b> to make them live for everyone. <span id="st"></span></p>
 <div class="tabs" id="tabs"></div><div id="v"></div></div>
 <script src="content.js"></script><script src="common.js"></script><script>
 let D,T='projects';
@@ -23,17 +27,23 @@ const v=$('v');
 if(T==='profile')v.innerHTML=P.map(([f,l,t])=>fld('profile',0,f,l,t,D.profile[f])).join('')+`<label>Project categories (comma separated)</label><input value="${esc(D.categories.join(', '))}" oninput="D.categories=this.value.split(',').map(s=>s.trim()).filter(Boolean);save()">`;
 else if(T==='publish')pub();
 else v.innerHTML=D[T].map((r,i)=>`<div class="row"><div class="rh"><b>#${i+1}</b><span><button onclick="mv('${T}',${i},-1)">↑</button><button onclick="mv('${T}',${i},1)">↓</button><button onclick="rm('${T}',${i})">✕</button></span></div>${S[T].map(([f,l,t])=>fld(T,i,f,l,t,r[f])).join('')}${T==='projects'?`<div class="pv" id="pv${i}">${thumb(r)}</div>`:''}</div>`).join('')+`<button class="btn red" onclick="add('${T}')">+ Add</button>`}
-function pub(){const g=JSON.parse(localStorage.getItem('pf_gh')||'{}');
-$('v').innerHTML=`<div class="row"><p>1) Create a fine-grained GitHub token (Settings → Developer settings) with <b>Contents: Read and write</b> on your portfolio repo. It stays in this browser only.</p>
-${['owner','repo','branch','token'].map(f=>`<label>${f}</label><input id="g_${f}" type="${f==='token'?'password':'text'}" value="${esc(g[f]||(f==='branch'?'main':''))}">`).join('')}
-<br><button class="btn red" onclick="publish()">Publish to GitHub</button> <span id="pm"></span></div>
-<div class="row"><button class="btn" onclick="exp()">Export content.js</button> <label style="display:inline-block" class="btn">Import .json<input type="file" accept=".json" hidden onchange="imp(this)"></label> <button class="btn" onclick="if(confirm('Discard local changes and reload the published version?')){localStorage.removeItem(KEY);location.reload()}">Discard draft</button></div>`}
-async function publish(){const g=Object.fromEntries(['owner','repo','branch','token'].map(f=>[f,$('g_'+f).value.trim()]));localStorage.setItem('pf_gh',JSON.stringify(g));
-const u=`https://api.github.com/repos/${g.owner}/${g.repo}/contents/content.js`,H={Authorization:'Bearer '+g.token,Accept:'application/vnd.github+json'};$('pm').textContent='Publishing…';
-try{const r=await fetch(u+'?ref='+g.branch,{headers:H});const sha=r.ok?(await r.json()).sha:undefined;
-const w=await fetch(u,{method:'PUT',headers:H,body:JSON.stringify({message:'Update portfolio content',branch:g.branch,sha,content:btoa(unescape(encodeURIComponent('window.PF_DATA='+JSON.stringify(D,null,1)+';\n')))})});
-$('pm').textContent=w.ok?'Published ✓ — live in about a minute.':'Failed: check owner, repo and token permissions ('+w.status+').'}catch(e){$('pm').textContent='Network error.'}}
+function pub(){$('v').innerHTML=`<div class="row"><p>Signed in as <b>${esc(G.owner)}/${esc(G.repo)}</b> (${esc(G.branch)})</p><button class="btn red" onclick="publish()">Publish to GitHub</button> <span id="pm"></span></div>
+<div class="row"><button class="btn" onclick="exp()">Export content.js</button> <label style="display:inline-block" class="btn">Import .json<input type="file" accept=".json" hidden onchange="imp(this)"></label> <button class="btn" onclick="if(confirm('Discard local changes and reload the published version?')){localStorage.removeItem(KEY);location.reload()}">Discard draft</button> <button class="btn" onclick="logout()">Sign out</button></div>`}
+async function publish(){const u='/repos/'+G.owner+'/'+G.repo+'/contents/content.js';$('pm').textContent='Publishing…';
+try{const r=await gh(u+'?ref='+G.branch);const sha=r.ok?(await r.json()).sha:undefined;
+const w=await gh(u,{method:'PUT',body:JSON.stringify({message:'Update portfolio content',branch:G.branch,sha,content:btoa(unescape(encodeURIComponent('window.PF_DATA='+JSON.stringify(D,null,1)+';\n')))})});
+$('pm').textContent=w.ok?'Published ✓ — live in about a minute.':'Failed ('+w.status+'): check the token permissions or sign in again.'}catch(e){$('pm').textContent='Network error.'}}
 function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['window.PF_DATA='+JSON.stringify(D,null,1)+';\n'],{type:'text/javascript'}));a.download='content.js';a.click()}
 function imp(i){const f=i.files[0];if(!f)return;f.text().then(t=>{D=JSON.parse(t);save();draw()})}
-loadData().then(d=>{D=d;draw()}).catch(fail);
+const GK='pf_gh:'+location.pathname.replace(/[^/]*$/,'');let G=null;
+const gh=(p,o={})=>fetch('https://api.github.com'+p,{...o,headers:{Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'}});
+async function verify(g){G=g;try{const r=await gh('/repos/'+g.owner+'/'+g.repo);if(r.status===401)return'Invalid or expired token.';if(r.status===404)return'Repo not found, or this token has no access to it.';const j=await r.json();
+if(j.owner.login.toLowerCase()!==g.owner.toLowerCase())return'Username does not match the repo owner.';if(!j.permissions||!j.permissions.push)return'This token cannot write to the repo. It needs Contents: Read and write.';return''}catch(e){return'Network error. Check your connection.'}}
+async function login(){const g=Object.fromEntries(['owner','repo','branch','token'].map(f=>[f,$('l_'+f).value.trim()]));if(Object.values(g).some(v=>!v)){$('lm').textContent='Fill in all fields.';return}
+$('lb').disabled=true;$('lm').textContent='Checking…';const e=await verify(g);$('lb').disabled=false;if(e){$('lm').textContent=e;G=null;return}
+(($('l_rem').checked)?localStorage:sessionStorage).setItem(GK,JSON.stringify(g));enter()}
+function logout(){localStorage.removeItem(GK);sessionStorage.removeItem(GK);location.reload()}
+function enter(){$('lg').hidden=true;$('app').hidden=false;loadData().then(d=>{D=d;draw()}).catch(fail)}
+(async()=>{const s=localStorage.getItem(GK)||sessionStorage.getItem(GK);if(s&&!(await verify(JSON.parse(s)))){return enter()}
+const h=location.hostname;if(h.endsWith('.github.io')){$('l_owner').value=h.split('.')[0];$('l_repo').value=location.pathname.split('/')[1]||h}$('lg').hidden=false})();
 </script></body></html>
