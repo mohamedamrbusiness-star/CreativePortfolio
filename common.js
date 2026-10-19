@@ -1,5 +1,5 @@
-const KEY='pf_draft';
-async function loadData(){try{const d=localStorage.getItem(KEY);if(d)return JSON.parse(d)}catch(e){}return JSON.parse(JSON.stringify(window.PF_DATA))}
+const KEY='pf_draft:'+location.pathname.replace(/[^/]*$/,'');
+async function loadData(){try{const d=localStorage.getItem(KEY);if(d)return JSON.parse(d)}catch(e){}if(!window.PF_DATA)throw new Error('content.js not found or invalid');return JSON.parse(JSON.stringify(window.PF_DATA))}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function media(p){const u=(p.url||'').trim();if(!u)return{k:'none'};let m;
 if(m=u.match(/(?:youtu\.be\/|v=|shorts\/|embed\/)([\w-]{11})/))return{k:'frame',src:'https://www.youtube.com/embed/'+m[1],yt:m[1]};
@@ -17,3 +17,4 @@ if(m.k==='img')return`<img src="${esc(m.src)}" alt="">`;
 if(m.k==='video')return`<video src="${esc(m.src)}" controls autoplay playsinline></video>`;
 if(m.k==='frame')return`<iframe src="${esc(m.src)}" allow="autoplay;fullscreen" allowfullscreen></iframe>`;
 return thumb(p)}
+function fail(e){document.body.innerHTML='<div style="max-width:560px;margin:15vh auto;padding:24px;font:16px/1.6 sans-serif"><h2>Site content failed to load</h2><p>Make sure <b>content.js</b>, <b>common.js</b> and <b>style.css</b> are uploaded in the same folder as index.html (not inside a sub-folder), then hard-refresh (Ctrl+Shift+R).</p><pre>'+esc(e&&e.message||e)+'</pre></div>'}

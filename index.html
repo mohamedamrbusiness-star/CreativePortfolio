@@ -12,6 +12,7 @@
 <footer><div class="wrap"><h2>Let's contact</h2><p>Let's create something creative together.</p><br><button class="btn gold" data-ct>Get Contact</button></div></footer>
 <div class="modal" id="m" hidden><div class="box" id="mb"></div></div>
 <script src="content.js"></script><script src="common.js"></script><script>
+if(typeof loadData==='undefined'){document.body.innerHTML='<div style="max-width:560px;margin:15vh auto;font:16px/1.6 sans-serif"><h2>common.js is missing</h2><p>Upload all files next to index.html.</p></div>'}
 const $=id=>document.getElementById(id);let D,cat='All';
 const open=h=>{$('mb').innerHTML='<button class="x" aria-label="Close">✕</button>'+h;$('m').hidden=false;$('mb').querySelector('.x').onclick=close};
 const close=()=>{$('m').hidden=true;$('mb').innerHTML=''};
@@ -32,5 +33,5 @@ $('photo').style.backgroundImage=P.photo?`url("${P.photo}")`:'';if(!P.photo)$('p
 $('stats').innerHTML=d.stats.map(s=>`<div><b>${esc(s.n)}</b><span>${esc(s.l)}</span></div>`).join('');
 $('tl').innerHTML=d.experience.map(e=>`<div><b>${esc(e.role)}</b><span>${esc(e.company)} · ${esc(e.period)}</span></div>`).join('');
 $('cc').innerHTML=d.certs.map(c=>`<div><b>${esc(c.name)}</b><br><small>${esc(c.by)}</small></div>`).join('');
-chips();grid();document.querySelectorAll('[data-ct]').forEach(b=>b.onclick=contact)});
+chips();grid();document.querySelectorAll('[data-ct]').forEach(b=>b.onclick=contact)}).catch(fail);
 </script></body></html>
